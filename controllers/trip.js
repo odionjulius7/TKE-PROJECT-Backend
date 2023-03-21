@@ -70,7 +70,7 @@ const deleteTrip = async (req, res) => {
 
 const createOverView = async (req, res) => {
   const tripId = req.params.id;
-  const { image, startDate, endDate, title, description } = req.body;
+  const { startDate, endDate, title, description } = req.body;
 
   const result = await cloudinary.uploader.upload(req.file.path);
 

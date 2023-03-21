@@ -11,7 +11,9 @@ const addGeneralBanner = async (req, res) => {
   const generalBanner = await GeneralBanner.find();
   //   res.send({ generalBanner });
   try {
-    await cloudinary.uploader.destroy(generalBanner[0].cloudinary_id);
+    if (generalBanner.length === 1) {
+      await cloudinary.uploader.destroy(generalBanner[0].cloudinary_id);
+    }
     await GeneralBanner.deleteMany({});
     const result = await cloudinary.uploader.upload(req.file.path);
 
@@ -22,9 +24,10 @@ const addGeneralBanner = async (req, res) => {
 
     await newGeneralBanner.save(); // Call save on the instance
 
-    return res
-      .status(StatusCodes.OK)
-      .json({ message: "General banner saved successfully", newGeneralBanner });
+    return res.status(StatusCodes.OK).json({
+      message: "General banner saved successfully",
+      newGeneralBanner,
+    });
   } catch (error) {
     console.error(error);
 

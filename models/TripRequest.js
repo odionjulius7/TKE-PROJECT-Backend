@@ -14,6 +14,11 @@ const TripRequestSchema = new mongoose.Schema(
       postCode: {
         type: String,
       },
+      userType: {
+        type: String,
+        enum: ["prospect", "user"],
+        default: "prospect",
+      },
     },
     tripType: {
       type: String,

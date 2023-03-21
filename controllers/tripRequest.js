@@ -39,7 +39,7 @@ const createTripRequest = async (req, res) => {
     try {
       // Verify token and get user
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log(decoded);
+      // console.log(decoded);
       user = await User.findById(decoded.userId).select("-password");
     } catch (error) {
       console.error(error);
@@ -50,6 +50,7 @@ const createTripRequest = async (req, res) => {
     // Add user object to tripRequestData
     tripRequestData.user = {
       ...user.toObject(), // we don't really need the toObject() since the user isn't null or undefined that we want to explicitly create an empty object {}
+      userType: "user",
     };
   }
 
