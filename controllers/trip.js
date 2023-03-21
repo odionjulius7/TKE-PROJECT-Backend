@@ -1,5 +1,6 @@
 const Trip = require("../models/Trip");
 const User = require("../models/User");
+const cloudinary = require("../utils/cloudinary");
 // const OverView = require("../models/OverView");
 const { StatusCodes } = require("http-status-codes");
 
@@ -69,26 +70,36 @@ const deleteTrip = async (req, res) => {
 
 const createOverView = async (req, res) => {
   const tripId = req.params.id;
-  const overviewData = req.body;
+  const { image, startDate, endDate, title, description } = req.body;
+
+  const result = await cloudinary.uploader.upload(req.file.path);
 
   try {
     const trip = await Trip.findById(tripId);
-
+    // delete the image from cloudinary cloud before adding a new review to avoid over loading cloudinary with so many image
+    await cloudinary.uploader.destroy(trip.overview.cloudinary_id);
     if (!trip) {
       return res
         .status(StatusCodes.NOT_FOUND)
         .json({ error: "Trip not found" });
     }
 
+    const overviewData = {
+      image: result.secure_url,
+      startDate,
+      endDate,
+      title,
+      description,
+      cloudinary_id: result.public_id,
+    };
+
     trip.overview = overviewData;
 
     await trip.save();
 
-    console.log("Overview data saved successfully");
-
     return res
       .status(StatusCodes.OK)
-      .json({ message: "Overview data saved successfully" });
+      .json({ message: "Overview data saved successfully", overviewData });
   } catch (error) {
     console.error(error);
 
@@ -97,6 +108,8 @@ const createOverView = async (req, res) => {
       .json({ error: "An error occurred while saving overview data" });
   }
 };
+
+// flight details
 
 const createFlightDetails = async (req, res) => {
   const tripId = req.params.id;
@@ -116,7 +129,7 @@ const createFlightDetails = async (req, res) => {
     await trip.save();
     return res
       .status(StatusCodes.OK)
-      .json({ message: "Flight details saved successfully" });
+      .json({ message: "Flight details saved successfully", flightData });
   } catch (error) {
     console.error(error);
 
@@ -125,7 +138,99 @@ const createFlightDetails = async (req, res) => {
       .json({ error: "An error occurred while saving flight details data" });
   }
 };
+const updateFlightDetails = async (req, res) => {
+  const tripId = req.params.tripId;
+  const flightData = req.body;
+  const flightId = req.params.flightId; // id of the flight to be updated
 
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    // looking for the index position of the flight details' id
+    const flightIndex = trip.flightDetails.findIndex(
+      (flight) => flight.id === flightId
+    );
+
+    if (flightIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Flight detail not found" });
+    }
+
+    // Update the flight at the specified index
+    // trip.flightDetails[flightIndex] = flightData;
+    trip.flightDetails[flightIndex] = {
+      ...trip.flightDetails[flightIndex],
+      ...flightData,
+    };
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Flight details updated successfully",
+      flightData,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while updating flight details data" });
+  }
+};
+const deleteFlightDetails = async (req, res) => {
+  const tripId = req.params.tripId;
+  const flightId = req.params.flightId; // id of the flight to be updated
+
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    // looking for the index position of the flight details' id
+    const flightIndex = trip.flightDetails.findIndex(
+      (flight) => flight.id === flightId
+    );
+    if (flightIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Flight detail not found" });
+    }
+
+    // trip.flightDetails.splice(flightIndex, 1);
+
+    trip.flightDetails = trip.flightDetails.filter(
+      (flight) => flight.id !== flightId
+    );
+
+    // Update the flight at the specified index
+    // trip.flightDetails[flightIndex] = flightData;
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Flight details deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while deleting flight details data" });
+  }
+};
+
+// End flight details
+
+// Visa
 const createVisa = async (req, res) => {
   const tripId = req.params.id;
   const visaData = req.body;
@@ -144,7 +249,7 @@ const createVisa = async (req, res) => {
     await trip.save();
     return res
       .status(StatusCodes.OK)
-      .json({ message: "Visa saved successfully" });
+      .json({ message: "Visa saved successfully", visaData });
   } catch (error) {
     console.error(error);
 
@@ -153,6 +258,84 @@ const createVisa = async (req, res) => {
       .json({ error: "An error occurred while saving visa data" });
   }
 };
+const updateVisa = async (req, res) => {
+  const tripId = req.params.tripId;
+  const visaData = req.body;
+  const visaId = req.params.visaId;
+
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    const visaIndex = trip.visa.findIndex((visa) => visa.id === visaId);
+
+    if (visaIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Visa not found" });
+    }
+
+    trip.visa[visaIndex] = {
+      ...trip.visa[visaIndex],
+      ...visaData,
+    };
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Visa updated successfully",
+      visaData,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while updating visa  data" });
+  }
+};
+const deleteVisa = async (req, res) => {
+  const tripId = req.params.tripId;
+  const visaId = req.params.visaId;
+
+  try {
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+    const visaIndex = trip.visa.findIndex((visa) => visa.id === visaId);
+    if (visaIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Visa not found" });
+    }
+
+    // trip.visa.splice(visaIndex, 1);
+
+    trip.visa = trip.visa.filter((visa) => visa.id !== visaId);
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Visa deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while deleting Visa data" });
+  }
+};
+
+// end of visa
+
+// Agreement
 
 const createAgreement = async (req, res) => {
   const tripId = req.params.id;
@@ -172,7 +355,7 @@ const createAgreement = async (req, res) => {
     await trip.save();
     return res
       .status(StatusCodes.OK)
-      .json({ message: "Agreement saved successfully" });
+      .json({ message: "Agreement saved successfully", agreementData });
   } catch (error) {
     console.error(error);
 
@@ -182,6 +365,90 @@ const createAgreement = async (req, res) => {
   }
 };
 
+const updateAgreement = async (req, res) => {
+  const tripId = req.params.tripId;
+  const agreementData = req.body;
+  const agreementId = req.params.agreementId;
+
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    const agreementIndex = trip.agreements.findIndex(
+      (agreement) => agreement.id === agreementId
+    );
+
+    if (agreementIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Agreement not found" });
+    }
+
+    trip.agreements[agreementIndex] = {
+      ...trip.agreements[agreementIndex],
+      ...agreementData,
+    };
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Agreement updated successfully",
+      agreementData,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while updating agreement data" });
+  }
+};
+const deleteAgreement = async (req, res) => {
+  const tripId = req.params.tripId;
+  const agreementId = req.params.agreementId;
+
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    const agreementIndex = trip.agreements.findIndex(
+      (agreement) => agreement.id === agreementId
+    );
+    if (agreementIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Agreement not found" });
+    }
+
+    trip.agreements = trip.agreements.filter(
+      (agreement) => agreement.id !== agreementId
+    );
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Agreement deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while deleting agreement data" });
+  }
+};
+
+// End Agreement
+
+// Payment
 const createPayment = async (req, res) => {
   const tripId = req.params.id;
   const paymentData = req.body;
@@ -210,6 +477,91 @@ const createPayment = async (req, res) => {
   }
 };
 
+const updatePayment = async (req, res) => {
+  const tripId = req.params.tripId;
+  const paymentData = req.body;
+  const paymentId = req.params.paymentId;
+
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    const paymentIndex = trip.payment.findIndex(
+      (payment) => payment.id === paymentId
+    );
+
+    if (paymentIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "payment not found" });
+    }
+
+    trip.payment[paymentIndex] = {
+      ...trip.payment[paymentIndex],
+      ...paymentData,
+    };
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Payment updated successfully",
+      paymentData,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while updating payment data" });
+  }
+};
+const deletePayment = async (req, res) => {
+  const tripId = req.params.tripId;
+  const paymentId = req.params.paymentId;
+
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    const paymentIndex = trip.payment.findIndex(
+      (payment) => payment.id === paymentId
+    );
+    if (paymentIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "pament not found" });
+    }
+
+    // trip.payment.splice(paymentIndex, 1);
+
+    trip.payment = trip.payment.filter((payment) => payment.id !== paymentId);
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "payment deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while deleting payment data" });
+  }
+};
+
+// End of payment
+
+// Travel Confirmation
+
 const createTravelConfrimation = async (req, res) => {
   const tripId = req.params.id;
   const confirmationData = req.body;
@@ -226,9 +578,10 @@ const createTravelConfrimation = async (req, res) => {
     trip.travelConfirmation.push(confirmationData);
 
     await trip.save();
-    return res
-      .status(StatusCodes.OK)
-      .json({ message: "Travel confirmation saved successfully" });
+    return res.status(StatusCodes.OK).json({
+      message: "Travel confirmation saved successfully",
+      confirmationData,
+    });
   } catch (error) {
     console.error(error);
 
@@ -237,6 +590,91 @@ const createTravelConfrimation = async (req, res) => {
     });
   }
 };
+
+const updateTravelConfrimation = async (req, res) => {
+  const tripId = req.params.tripId;
+  const confrimationData = req.body;
+  const confrimationId = req.params.confrimationId;
+
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    const confrimationIndex = trip.travelConfirmation.findIndex(
+      (confrimation) => confrimation.id === confrimationId
+    );
+
+    if (confrimationIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Travel confirmation not found" });
+    }
+
+    trip.travelConfirmation[confrimationIndex] = {
+      ...trip.travelConfirmation[confrimationIndex],
+      ...confrimationData,
+    };
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Travel confirmation updated successfully",
+      confrimationData,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      error: "An error occurred while updating travel confirmation data",
+    });
+  }
+};
+const deleteTravelConfrimation = async (req, res) => {
+  const tripId = req.params.tripId;
+  const confrimationId = req.params.confrimationId;
+
+  try {
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "Trip not found" });
+    }
+
+    const confrimationIndex = trip.travelConfirmation.findIndex(
+      (confrimation) => confrimation.id === confrimationId
+    );
+    if (confrimationIndex === -1) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "confrimation detail not found" });
+    }
+
+    trip.travelConfirmation.splice(confrimationIndex, 1);
+
+    // trip.travelConfirmation = trip.travelConfirmation.filter(
+    //   (confrimation) => confrimation.id !== confrimationId
+    // );
+
+    await trip.save();
+    return res.status(StatusCodes.OK).json({
+      message: "Travel confirmation deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      error: "An error occurred while deleting travel confirmation data",
+    });
+  }
+};
+
+// End of Travel Confirmation
 
 const createItinerary = async (req, res) => {
   const tripId = req.params.id;
@@ -256,7 +694,7 @@ const createItinerary = async (req, res) => {
     await trip.save();
     return res
       .status(StatusCodes.OK)
-      .json({ message: "Itinarary saved successfully" });
+      .json({ message: "Itinarary saved successfully", itineraryData });
   } catch (error) {
     console.error(error);
 
@@ -265,25 +703,6 @@ const createItinerary = async (req, res) => {
     });
   }
 };
-
-// const createOverView = async (req, res) => {
-//   const tripId = req.params.id;
-//   const trip = await Trip.findOne({ _id: tripId }).select("-password");
-
-//   if (!trip) {
-//     throw new NotFoundError(`Trip with the id ${tripId} not found`);
-//   }
-
-//   const overviewData = req.body;
-//   overviewData.trip = tripId;
-
-//   const overview = await OverView.create(overviewData);
-
-//   res.status(StatusCodes.CREATED).json({
-//     message: "Overview created successfully",
-//     overview,
-//   });
-// };
 
 module.exports = {
   getAllTrip,
@@ -299,6 +718,17 @@ module.exports = {
   createPayment,
   createTravelConfrimation,
   createItinerary,
+  // updates
+  updateFlightDetails,
+  deleteFlightDetails,
+  updatePayment,
+  deletePayment,
+  updateTravelConfrimation,
+  deleteTravelConfrimation,
+  updateAgreement,
+  deleteAgreement,
+  updateVisa,
+  deleteVisa,
 };
 
 // const tripId = req.params.id;

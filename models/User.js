@@ -32,6 +32,14 @@ const UserSchema = new Schema({
     enum: ["user", "admin"],
     default: "user",
   },
+  banner: {
+    imgURL: {
+      type: String,
+    },
+    cloudinary_id: {
+      type: String,
+    },
+  },
 });
 
 UserSchema.pre("save", async function (next) {

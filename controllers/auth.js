@@ -1,6 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 const sgMail = require("@sendgrid/mail");
 
+const cloudinary = require("../utils/cloudinary");
 const passwordGenerator = require("password-generator");
 const User = require("../models/User");
 
@@ -13,9 +14,9 @@ const bcrypt = require("bcrypt");
 
 const getUser = async (req, res) => {
   const { email } = req.user;
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }); // find the user frm the req.headers.authorization to know it's an admin
 
-  console.log(req.user);
+  // console.log(req.user);
 
   if (user.role === "user") {
     throw new UnauthenticatedError(
@@ -63,8 +64,10 @@ const registerUser = async (req, res) => {
     to: newData.email,
     from: "odionjulius7@gmail.com",
     subject: "Your new account has been created!",
-    // text: `Hello ${newData.firstName}, your new account has been created with the following login details: Email: ${newData.email}, Password: ${newData.password}`,
-    html: `<strong>Hello ${newData.firstName}, your new account has been created with the following login details: Email: ${newData.email}, Password: ${newData.password}</strong>`,
+    html: `<div>
+    <p>Hello ${newData.firstName}, your new account has been created with the following login details:<br /> Email: ${newData.email}, Password: ${newData.password}</p>
+    <a href="https://client.thekeona.com/">Click here to login</a>
+    </div>`,
   };
   await sgMail.send(msg);
   // const info = await sgMail.send(msg);
@@ -72,7 +75,9 @@ const registerUser = async (req, res) => {
 
   const token = user.createJWT();
 
-  res.status(StatusCodes.CREATED).json({ user, token });
+  res
+    .status(StatusCodes.CREATED)
+    .json({ success: true, msg: "user created successfully", user, token });
 };
 
 //
@@ -106,7 +111,7 @@ const loginUser = async (req, res) => {
 
   const isPasswordCorrect = await user.comparePassword(password);
   if (!isPasswordCorrect) {
-    throw new UnauthenticatedError(`Invalid Credentials  password ${password}`);
+    throw new UnauthenticatedError(`Invalid Credentials (password)`);
   }
   const token = user.createJWT();
   res.status(StatusCodes.OK).json({
@@ -123,9 +128,6 @@ const loginAdmin = async (req, res) => {
   }
   const user = await User.findOne({ email });
 
-  if (!user) {
-    throw new UnauthenticatedError("Invalid Credentials");
-  }
   if (!user) {
     throw new UnauthenticatedError("Invalid Credentials");
   }
@@ -170,6 +172,80 @@ const editUserDetails = async (req, res) => {
     .json({ message: "user details updated", updatedUser });
 };
 
+const addUserBanner = async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const user = await User.findById(userId);
+    // delete the image from cloudinary cloud before adding a new review to avoid over loading cloudinary with so many image
+    await cloudinary.uploader.destroy(user.banner.cloudinary_id);
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "User not found" });
+    }
+    const results = await cloudinary.uploader.upload(req.file.path);
+
+    const userBanner = {
+      imgURL: results.secure_url,
+      cloudinary_id: results.public_id,
+    };
+
+    user.banner = userBanner;
+
+    await user.save();
+
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: "User banner saved successfully", userBanner });
+  } catch (error) {
+    console.error(error);
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ error: "An error occurred while saving user banner data" });
+  }
+};
+
+// change or forgot password
+
+const changePassword = async (req, res) => {
+  const { email, currentPassword, newPassword } = req.body;
+
+  // Check if the user with the provided email exists
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      msg: "User not found",
+    });
+  }
+
+  // Check if the provided current password matches the user's current password
+  if (!(await user.comparePassword(currentPassword))) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      msg: "Incorrect current password",
+    });
+  }
+
+  // Update the user's password
+  user.password = newPassword;
+  await user.save();
+
+  // Send an email to the user to confirm the password change
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  const msg = {
+    to: email,
+    from: "odionjulius7@gmail.com",
+    subject: "Your password has been changed!",
+    html: `<strong>Hello ${user.firstName}, your password has been changed successfully.</strong>`,
+  };
+  await sgMail.send(msg);
+
+  res.status(StatusCodes.OK).json({
+    msg: "Password changed successfully",
+  });
+};
+
 module.exports = {
   registerUser,
   registerAdmin,
@@ -178,6 +254,8 @@ module.exports = {
   getUser,
   getSingleUser,
   editUserDetails,
+  addUserBanner,
+  changePassword,
 };
 
 // we can hash the password in our control or we use the mongoose middleware for that in the model

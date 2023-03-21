@@ -88,6 +88,9 @@ const overviewSchema = new mongoose.Schema({
   description: {
     type: String,
   },
+  cloudinary_id: {
+    type: String,
+  },
   trip: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Trip",
