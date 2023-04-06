@@ -12,6 +12,7 @@ const {
   registerAdmin,
   addUserBanner,
   changePassword,
+  deleteUser,
 } = require("../controllers/auth");
 const authMiddleware = require("../middleware/authentication");
 
@@ -22,6 +23,7 @@ router
   .route("/user/:email")
   .get(getSingleUser)
   .patch(authMiddleware, editUserDetails);
+
 //
 router.route("/register/user").post(authMiddleware, registerUser);
 router.route("/change/password").post(authMiddleware, changePassword);
@@ -31,6 +33,9 @@ router.route("/login/admin").post(loginAdmin);
 router.route("/login/user").post(loginUser);
 
 // add user banner
-router.route("/users/:userId").post(upload.single("banner"), addUserBanner);
+router
+  .route("/users/:userId")
+  .post(upload.single("banner"), addUserBanner)
+  .delete(deleteUser);
 
 module.exports = router;

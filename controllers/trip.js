@@ -72,8 +72,6 @@ const createOverView = async (req, res) => {
   const tripId = req.params.id;
   const { startDate, endDate, title, description } = req.body;
 
-  const result = await cloudinary.uploader.upload(req.file.path);
-
   try {
     const trip = await Trip.findById(tripId);
     // delete the image from cloudinary cloud before adding a new review to avoid over loading cloudinary with so many image
@@ -83,6 +81,7 @@ const createOverView = async (req, res) => {
         .status(StatusCodes.NOT_FOUND)
         .json({ error: "Trip not found" });
     }
+    const result = await cloudinary.uploader.upload(req.file.path);
 
     const overviewData = {
       image: result.secure_url,

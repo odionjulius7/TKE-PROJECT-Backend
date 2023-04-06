@@ -26,7 +26,7 @@ const getUser = async (req, res) => {
 
   const users = await User.find(
     {},
-    "email firstName lastName dateOfBirth postCode role"
+    "email firstName lastName dateOfBirth postCode phoneNumber role"
   );
   res.status(StatusCodes.OK).json({ users, count: users.length });
 };
@@ -152,7 +152,7 @@ const loginAdmin = async (req, res) => {
 
 // edit user details
 const editUserDetails = async (req, res) => {
-  const { userId } = req.user;
+  const { userId } = req.user; //auth token
   const email = req.params.email;
   const update = req.body;
 
@@ -246,6 +246,25 @@ const changePassword = async (req, res) => {
   });
 };
 
+const deleteUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const deletedUser = await User.findOneAndDelete({
+      _id: userId,
+    });
+    if (!deletedUser) {
+      throw new NotFoundError(`User with the id ${userId} not found`);
+    }
+    res
+      .status(StatusCodes.OK)
+      .json({ message: "User request deleted", user: deletedUser });
+    console.log(deletedUser);
+  } catch (error) {
+    throw new BadRequestError("Not user, bad request");
+  }
+};
+
 module.exports = {
   registerUser,
   registerAdmin,
@@ -256,6 +275,7 @@ module.exports = {
   editUserDetails,
   addUserBanner,
   changePassword,
+  deleteUser,
 };
 
 // we can hash the password in our control or we use the mongoose middleware for that in the model

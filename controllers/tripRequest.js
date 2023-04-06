@@ -11,8 +11,28 @@ const jwt = require("jsonwebtoken");
 
 const getAllTripRequest = async (req, res) => {
   const tripRequests = await TripRequest.find({});
-  console.log(tripRequests);
-  res.status(StatusCodes.OK).json({ tripRequests, count: tripRequests.length });
+
+  // Object to store items by month
+  const tripReqsByMonth = {};
+
+  // Iterate over items and add them to corresponding month arrays
+  tripRequests.forEach((item) => {
+    const month = item.createdAt.getMonth();
+    const monthName = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+    }).format(item.createdAt);
+
+    if (!tripReqsByMonth[monthName]) {
+      tripReqsByMonth[monthName] = [];
+    }
+
+    tripReqsByMonth[monthName].push(item);
+  });
+
+  console.log(tripReqsByMonth);
+  res
+    .status(StatusCodes.OK)
+    .json({ tripRequests, count: tripRequests.length, tripReqsByMonth });
 };
 
 const getSingleTripRequest = async (req, res) => {
@@ -32,6 +52,7 @@ const createTripRequest = async (req, res) => {
   // Check for authorization header
   const authHeader = req.headers["authorization"];
 
+  // if token(authorization token) is available, then replace the user object with it own
   if (authHeader && authHeader.startsWith("Bearer ")) {
     // Extract token from authorization header
     const token = authHeader.split(" ")[1];
@@ -47,7 +68,7 @@ const createTripRequest = async (req, res) => {
       return;
     }
 
-    // Add user object to tripRequestData
+    // replace the tripRequestData.user with the token user object in the tripRequestData
     tripRequestData.user = {
       ...user.toObject(), // we don't really need the toObject() since the user isn't null or undefined that we want to explicitly create an empty object {}
       userType: "user",
@@ -68,7 +89,7 @@ const updateTripRequestAsSeen = async (req, res) => {
   // perform (e.g. $inc for incrementing a numeric field, $push for adding an item to an array field, etc.).
   const updatedTripRequest = await TripRequest.findOneAndUpdate(
     { _id: tripRequestId },
-    { $set: { requestStatus: "old" } },
+    { $set: { requestStatus: "old" } }, // update the status by using $set
     { new: true }
   );
 
@@ -101,3 +122,29 @@ module.exports = {
   deleteTripRequest,
   updateTripRequestAsSeen,
 };
+
+// Sample array of items with creation month
+// const items = [
+//   { name: "Item 1", created_at: new Date("2022-02-01") },
+//   { name: "Item 2", created_at: new Date("2021-11-15") },
+//   { name: "Item 3", created_at: new Date("2023-01-05") },
+//   { name: "Item 4", created_at: new Date("2022-05-20") },
+//   { name: "Item 5", created_at: new Date("2023-02-10") }
+// ];
+
+// Object to store items by month
+// const itemsByMonth = {};
+
+// Iterate over items and add them to corresponding month arrays
+// items.forEach(item => {
+//   const month = item.created_at.getMonth();
+//   const monthName = new Intl.DateTimeFormat('en-US', { month: 'short' }).format(item.created_at);
+
+//   if (!itemsByMonth[monthName]) {
+//     itemsByMonth[monthName] = [];
+//   }
+
+//   itemsByMonth[monthName].push(item);
+// });
+
+// console.log(itemsByMonth);
