@@ -51,7 +51,6 @@ const createTrip = async (req, res) => {
   }
 
   // const tripData = req.body;
-
   const trip = await Trip.create({ user: user._id });
   // Trip.create({ user: userId, ...tripData })
   res
@@ -77,9 +76,9 @@ const createOverView = async (req, res) => {
   try {
     const trip = await Trip.findById(tripId);
     // delete the image from cloudinary cloud before adding a new review to avoid over loading cloudinary with so many image
-    if (trip.overview.cloudinary_id) {
-      await cloudinary.uploader.destroy(trip.overview.cloudinary_id);
-    }
+    // if (trip.overview.cloudinary_id) {
+    //   await cloudinary.uploader.destroy(trip.overview.cloudinary_id);
+    // }
     if (!trip) {
       return res
         .status(StatusCodes.NOT_FOUND)
