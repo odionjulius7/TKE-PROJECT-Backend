@@ -99,7 +99,7 @@ const createOverView = async (req, res) => {
     trip.overview = overviewData;
 
     await trip.save();
-
+    console.log(startDate);
     return res
       .status(StatusCodes.OK)
       .json({ message: "Overview data saved successfully", overviewData });
