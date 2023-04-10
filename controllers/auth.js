@@ -15,18 +15,15 @@ const bcrypt = require("bcrypt");
 const getUser = async (req, res) => {
   const { email } = req.user;
   const user = await User.findOne({ email }); // find the user frm the req.headers.authorization to know it's an admin
-
   // console.log(req.user);
-
   if (user.role === "user") {
     throw new UnauthenticatedError(
       "Unauthorize credential, This is not an admin account"
     );
   }
-
   const users = await User.find(
     {},
-    "email firstName lastName dateOfBirth postCode phoneNumber role"
+    "email firstName lastName dateOfBirth postCode phoneNumber role banner"
   );
   res.status(StatusCodes.OK).json({ users, count: users.length });
 };
@@ -174,11 +171,10 @@ const editUserDetails = async (req, res) => {
 
 const addUserBanner = async (req, res) => {
   const userId = req.params.userId;
-
   try {
     const user = await User.findById(userId);
     // delete the image from cloudinary cloud before adding a new review to avoid over loading cloudinary with so many image
-    await cloudinary.uploader.destroy(user.banner.cloudinary_id);
+    // await cloudinary.uploader.destroy(user.banner.cloudinary_id);
     if (!user) {
       return res
         .status(StatusCodes.NOT_FOUND)
@@ -200,7 +196,6 @@ const addUserBanner = async (req, res) => {
       .json({ message: "User banner saved successfully", userBanner });
   } catch (error) {
     console.error(error);
-
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ error: "An error occurred while saving user banner data" });
