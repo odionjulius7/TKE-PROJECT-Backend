@@ -55,8 +55,8 @@ const registerUser = async (req, res) => {
   const newData = { ...req.body, password };
   const user = await User.create({ ...newData });
 
-  console.log(`${newData.password}, ${newData.email} `);
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  // console.log(`${newData.password}, ${newData.email} `);
+  // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const msg = {
     to: newData.email,
     from: "odionjulius7@gmail.com",
@@ -169,11 +169,11 @@ const editUserDetails = async (req, res) => {
     .json({ message: "user details updated", updatedUser });
 };
 
+// upload banner
 const addUserBanner = async (req, res) => {
   const userId = req.params.userId;
   try {
     const user = await User.findById(userId);
-    // delete the image from cloudinary cloud before adding a new review to avoid over loading cloudinary with so many image
     // await cloudinary.uploader.destroy(user.banner.cloudinary_id);
     if (!user) {
       return res
@@ -181,16 +181,12 @@ const addUserBanner = async (req, res) => {
         .json({ error: "User not found" });
     }
     const results = await cloudinary.uploader.upload(req.file.path);
-
     const userBanner = {
       imgURL: results.secure_url,
       cloudinary_id: results.public_id,
     };
-
     user.banner = userBanner;
-
     await user.save();
-
     return res
       .status(StatusCodes.OK)
       .json({ message: "User banner saved successfully", userBanner });
@@ -278,6 +274,41 @@ module.exports = {
 //   const { name, email, password } = req.body;
 
 //   const salt = await bcrypt.genSalt(10); // the number of rounds of byte of the hashed password should be(10 is a default)
+
+// const addUserBanner = async (req, res) => {
+//   const userId = req.params.userId;
+//   try {
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res
+//         .status(StatusCodes.NOT_FOUND)
+//         .json({ error: "User not found" });
+//     }
+//     upload(req, res, async (error) => {
+//       if (error) {
+//         console.error(error);
+//         return res
+//           .status(StatusCodes.BAD_REQUEST)
+//           .json({ error: error.message });
+//       }
+//       const result = await cloudinary.uploader.upload(req.file.path);
+//       const userBanner = {
+//         imgURL: result.secure_url,
+//         cloudinary_id: result.public_id,
+//       };
+//       user.banner = userBanner;
+//       await user.save();
+//       return res
+//         .status(StatusCodes.OK)
+//         .json({ message: "User banner saved successfully", userBanner });
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(StatusCodes.INTERNAL_SERVER_ERROR)
+//       .json({ error: "An error occurred while saving user banner data" });
+//   }
+// };
 
 //   const hashedPassword = await bcrypt.hash(password, salt);
 

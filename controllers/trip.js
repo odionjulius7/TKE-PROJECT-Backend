@@ -757,3 +757,22 @@ module.exports = {
 // } catch (err) {
 //   console.error(err);
 // }
+
+// Object to store items by month
+// const tripByMonth = {};
+
+// Iterate over items and add them to corresponding month arrays
+// trips.forEach((item) => {
+//   const month = item.createdAt.getMonth();
+//   const monthName = new Intl.DateTimeFormat("en-US", {
+//     month: "short",
+//   }).format(item.createdAt);
+
+//   if (!tripByMonth[monthName]) {
+//     tripByMonth[monthName] = [];
+//   }
+
+//   tripByMonth[monthName].push(item);
+// });
+
+// console.log(tripByMonth);

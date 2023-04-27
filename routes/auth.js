@@ -1,6 +1,6 @@
 const express = require("express");
 
-const upload = require("../utils/multer");
+const { upload } = require("../utils/singleBannerMulter");
 const {
   register,
   loginAdmin,
