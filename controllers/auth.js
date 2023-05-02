@@ -56,7 +56,7 @@ const registerUser = async (req, res) => {
   const user = await User.create({ ...newData });
 
   // console.log(`${newData.password}, ${newData.email} `);
-  // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const msg = {
     to: newData.email,
     from: "odionjulius7@gmail.com",
