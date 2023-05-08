@@ -14,6 +14,24 @@ const jwt = require("jsonwebtoken");
 const getAllTrip = async (req, res) => {
   const trips = await Trip.find({});
 
+  const tripsByMonth = {};
+
+  // Iterate over items and add them to corresponding month arrays
+  trips.forEach((item) => {
+    const month = item.createdAt.getMonth();
+    const monthName = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+    }).format(item?.createdAt);
+
+    if (!tripsByMonth[monthName]) {
+      tripsByMonth[monthName] = [];
+    }
+
+    tripsByMonth[monthName].push(item);
+  });
+
+  console.log(tripsByMonth);
+
   res.status(StatusCodes.OK).json({ trips, count: trips.length });
 };
 
@@ -61,12 +79,12 @@ const createTrip = async (req, res) => {
 const updateTrip = async (req, res) => {
   res.send("update trip");
 };
+
 const deleteTrip = async (req, res) => {
   res.send("delete trip");
 };
 
 // create trip items
-
 const createOverView = async (req, res) => {
   const tripId = req.params.id;
   const { startDate, endDate, title, description } = req.body;
@@ -112,7 +130,6 @@ const createOverView = async (req, res) => {
 };
 
 // flight details
-
 const createFlightDetails = async (req, res) => {
   const tripId = req.params.id;
   const flightData = req.body;
@@ -140,6 +157,7 @@ const createFlightDetails = async (req, res) => {
       .json({ error: "An error occurred while saving flight details data" });
   }
 };
+
 const updateFlightDetails = async (req, res) => {
   const tripId = req.params.tripId;
   const flightData = req.body;
@@ -185,6 +203,7 @@ const updateFlightDetails = async (req, res) => {
       .json({ error: "An error occurred while updating flight details data" });
   }
 };
+
 const deleteFlightDetails = async (req, res) => {
   const tripId = req.params.tripId;
   const flightId = req.params.flightId; // id of the flight to be updated
@@ -230,8 +249,6 @@ const deleteFlightDetails = async (req, res) => {
   }
 };
 
-// End flight details
-
 // Visa
 const createVisa = async (req, res) => {
   const tripId = req.params.id;
@@ -260,6 +277,7 @@ const createVisa = async (req, res) => {
       .json({ error: "An error occurred while saving visa data" });
   }
 };
+
 const updateVisa = async (req, res) => {
   const tripId = req.params.tripId;
   const visaData = req.body;
@@ -300,6 +318,7 @@ const updateVisa = async (req, res) => {
       .json({ error: "An error occurred while updating visa  data" });
   }
 };
+
 const deleteVisa = async (req, res) => {
   const tripId = req.params.tripId;
   const visaId = req.params.visaId;
@@ -335,10 +354,7 @@ const deleteVisa = async (req, res) => {
   }
 };
 
-// end of visa
-
 // Agreement
-
 const createAgreement = async (req, res) => {
   const tripId = req.params.id;
   const agreementData = req.body;
@@ -409,6 +425,7 @@ const updateAgreement = async (req, res) => {
       .json({ error: "An error occurred while updating agreement data" });
   }
 };
+
 const deleteAgreement = async (req, res) => {
   const tripId = req.params.tripId;
   const agreementId = req.params.agreementId;
@@ -447,8 +464,6 @@ const deleteAgreement = async (req, res) => {
       .json({ error: "An error occurred while deleting agreement data" });
   }
 };
-
-// End Agreement
 
 // Payment
 const createPayment = async (req, res) => {
@@ -521,6 +536,7 @@ const updatePayment = async (req, res) => {
       .json({ error: "An error occurred while updating payment data" });
   }
 };
+
 const deletePayment = async (req, res) => {
   const tripId = req.params.tripId;
   const paymentId = req.params.paymentId;
@@ -560,10 +576,7 @@ const deletePayment = async (req, res) => {
   }
 };
 
-// End of payment
-
 // Travel Confirmation
-
 const createTravelConfrimation = async (req, res) => {
   const tripId = req.params.id;
   const confirmationData = req.body;
@@ -635,6 +648,7 @@ const updateTravelConfrimation = async (req, res) => {
     });
   }
 };
+
 const deleteTravelConfrimation = async (req, res) => {
   const tripId = req.params.tripId;
   const confrimationId = req.params.confrimationId;

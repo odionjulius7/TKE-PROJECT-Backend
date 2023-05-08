@@ -29,7 +29,7 @@ const getAllTripRequest = async (req, res) => {
     tripReqsByMonth[monthName].push(item);
   });
 
-  console.log(tripReqsByMonth);
+  // console.log(tripReqsByMonth);
   res
     .status(StatusCodes.OK)
     .json({ tripRequests, count: tripRequests.length, tripReqsByMonth });

@@ -13,6 +13,8 @@ const {
   addUserBanner,
   changePassword,
   deleteUser,
+  sendResetToken,
+  resetPassword,
 } = require("../controllers/auth");
 const authMiddleware = require("../middleware/authentication");
 
@@ -31,6 +33,10 @@ router.route("/change/password").post(authMiddleware, changePassword);
 router.route("/register/admin").post(registerAdmin);
 router.route("/login/admin").post(loginAdmin);
 router.route("/login/user").post(loginUser);
+
+// Reset Token
+router.route("/send/token").post(sendResetToken);
+router.route("/reset/password").post(resetPassword);
 
 // add user banner
 router

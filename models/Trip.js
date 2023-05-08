@@ -117,32 +117,44 @@ const itinerarySchema = new mongoose.Schema({
 });
 
 // Trip
-const tripSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    // required: true,
+const tripSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      // required: true,
+    },
+    overview: {
+      type: overviewSchema,
+      default: {},
+    },
+    itinerary: {
+      type: itinerarySchema,
+    },
+    visa: {
+      type: [visaSchema],
+      default: [],
+    },
+    flightDetails: {
+      type: [flightDetailsSchema],
+    },
+    agreements: [
+      {
+        type: { agreementSchema },
+        default: [],
+      },
+    ],
+    payment: {
+      type: [paymentSchema],
+      default: [],
+    },
+    travelConfirmation: {
+      type: [travelConfirmationSchema],
+      default: [],
+    },
   },
-  overview: {
-    type: overviewSchema,
-  },
-  itinerary: {
-    type: itinerarySchema,
-  },
-  visa: {
-    type: [visaSchema],
-  },
-  flightDetails: {
-    type: [flightDetailsSchema],
-  },
-  agreements: [agreementSchema],
-  payment: {
-    type: [paymentSchema],
-  },
-  travelConfirmation: {
-    type: [travelConfirmationSchema],
-  },
-});
+  { timestamps: true }
+);
 
 const Trip = mongoose.model("Trip", tripSchema);
 

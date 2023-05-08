@@ -8,6 +8,7 @@ const UserSchema = new Schema({
     type: String,
     required: [true, "Please, provide email"],
     unique: true,
+    trim: true,
   },
   gender: { type: String },
   phoneNumber: { type: String },
@@ -40,6 +41,8 @@ const UserSchema = new Schema({
       type: String,
     },
   },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
 });
 
 UserSchema.pre("save", async function (next) {

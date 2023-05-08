@@ -72,9 +72,13 @@ const registerUser = async (req, res) => {
 
   const token = user.createJWT();
 
-  res
-    .status(StatusCodes.CREATED)
-    .json({ success: true, msg: "user created successfully", user, token });
+  res.status(StatusCodes.CREATED).json({
+    success: true,
+    msg: "user created successfully",
+    user,
+    token,
+    password,
+  });
 };
 
 //
@@ -108,7 +112,7 @@ const loginUser = async (req, res) => {
 
   const isPasswordCorrect = await user.comparePassword(password);
   if (!isPasswordCorrect) {
-    throw new UnauthenticatedError(`Invalid Credentials (password)`);
+    throw new UnauthenticatedError(`Invalid Credentials  password ${password}`);
   }
   const token = user.createJWT();
   res.status(StatusCodes.OK).json({
@@ -199,7 +203,6 @@ const addUserBanner = async (req, res) => {
 };
 
 // change or forgot password
-
 const changePassword = async (req, res) => {
   const { email, currentPassword, newPassword } = req.body;
 
@@ -236,6 +239,78 @@ const changePassword = async (req, res) => {
     msg: "Password changed successfully",
   });
 };
+// change or forgot password
+const sendResetToken = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "User with that email does not exist" });
+    }
+    const token = Math.random().toString(36).slice(-8);
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    // Send an email to the user to confirm the password change
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const msg = {
+      to: email,
+      from: "odionjulius7@gmail.com",
+      subject: "Your password reset token",
+      html: `<strong>Hello ${user.firstName},</strong><br><br>
+        You recently requested to reset your password. Please use the following token to reset your password:<br><br>
+        Token: <strong>${token}</strong><br><br>
+        Please note that this token will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.`,
+    };
+    await sgMail.send(msg);
+
+    res.status(200).json({ message: "Email sent" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "Password reset token is invalid or has expired" });
+    }
+
+    // const hash = await bcrypt.hash(password, 10);
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    // Send an email to the user to confirm the password change
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const msg = {
+      to: user.email,
+      from: "odionjulius7@gmail.com",
+      subject: "Your password has been changed!",
+      html: `<strong>Hello ${user.firstName}, your password has been changed successfully.</strong>`,
+    };
+    await sgMail.send(msg);
+
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const deleteUser = async (req, res) => {
   const { userId } = req.params;
@@ -267,6 +342,8 @@ module.exports = {
   addUserBanner,
   changePassword,
   deleteUser,
+  sendResetToken,
+  resetPassword,
 };
 
 // we can hash the password in our control or we use the mongoose middleware for that in the model
