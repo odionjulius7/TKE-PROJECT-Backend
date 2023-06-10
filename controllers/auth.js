@@ -278,6 +278,11 @@ const resetPassword = async (req, res) => {
 
   try {
     const user = await User.findOne({
+      /*
+       *find the user with both the hashed ResetToken and the passwordResetExpires date
+       * if passwordResetExpires is greater than the present time, get the user
+       * else if less than passwordResetExpires has expired ({ $gt: Date.now() })
+       */
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },
     });
