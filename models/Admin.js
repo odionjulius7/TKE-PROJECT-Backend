@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const Schema = mongoose.Schema;
@@ -17,19 +17,18 @@ const AdminSchema = new Schema({
 
   role: {
     type: String,
-    // enum: ["user", "admin"],
     default: "admin",
   },
 });
 
-UserSchema.pre("save", async function (next) {
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+AdminSchema.pre("save", async function (next) {
+  const salt = await bcryptjs.genSalt(10);
+  this.password = await bcryptjs.hash(this.password, salt);
 
   next();
 });
 
-UserSchema.methods.createJWT = function () {
+AdminSchema.methods.createJWT = function () {
   return jwt.sign(
     { adminId: this._id, userName: this.userName },
     process.env.JWT_SECRET,
@@ -39,11 +38,9 @@ UserSchema.methods.createJWT = function () {
   );
 };
 
-UserSchema.methods.comparePassword = async function (candidatePassword) {
-  const isMatch = await bcrypt.compare(candidatePassword, this.password);
+AdminSchema.methods.comparePassword = async function (candidatePassword) {
+  const isMatch = await bcryptjs.compare(candidatePassword, this.password);
   return isMatch;
 };
 
-// const User = mongoose.model("User", userSchema);
-
-module.exports = mongoose.model("User", AdminSchema);
+module.exports = mongoose.model("Admin", AdminSchema);
